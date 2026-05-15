@@ -383,6 +383,10 @@ function renderFormulario(emp){
       </tbody>
     </table></div>`));
 
+  document.getElementById('btn-guardar').classList.remove('hidden');
+  document.getElementById('btn-guardar').disabled = false;
+  document.getElementById('btn-guardar').innerHTML = '✓ Guardar datos';
+
   document.getElementById('step1').classList.remove('active');
   document.getElementById('step-lock').classList.remove('active');
   document.getElementById('step2').classList.add('active');
