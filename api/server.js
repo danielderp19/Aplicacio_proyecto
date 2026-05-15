@@ -25,6 +25,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ── VERSION ENDPOINT ──
+app.get('/api/version', (req, res) => {
+  res.json({ version: 'v1.1.0' });
+});
+
 // ── GET /api/empleado/:cedula ──
 // Revisa si ya existe un registro para esa cédula
 app.get('/api/empleado/:cedula', async (req, res) => {

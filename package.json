@@ -1,6 +1,6 @@
 {
   "name": "logiser-colaboradores",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "dev": "node api/server.js",
     "build": "echo 'No build needed'",

@@ -76,7 +76,9 @@ button{padding:12px 20px;border:none;border-radius:8px;font-size:14px;font-weigh
 .sub-form{background:#fff;border:1px solid #dde;border-radius:8px;padding:14px;margin-top:10px;display:none}
 .sub-form.show{display:block}
 .spinner-inline{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin{to{transform:rotate(360deg)}
+.version-badge{position:fixed;bottom:12px;right:12px;background:#667eea;color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:600;opacity:0.7;z-index:999}
+}
 </style>
 </head>
 <body>
@@ -442,6 +444,17 @@ async function descargarTodo(){
   a.download=`Datos_Colaboradores_Logiser_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
+
+
+// ── CARGAR VERSIÓN ──
+fetch('/api/version').then(r=>r.json()).then(d=>{
+  document.getElementById('version-info').textContent = d.version;
+}).catch(e=>{
+  console.log('Versión local: v1.1.0');
+});
+
 </script>
-</body>
+<div class="version-badge" id="version-info">v1.1.0</div>
+
+  </body>
 </html>
