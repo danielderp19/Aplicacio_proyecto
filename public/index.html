@@ -149,6 +149,7 @@ button{padding:12px 20px;border:none;border-radius:8px;font-size:14px;font-weigh
       <div class="btn-row">
         <button type="button" class="btn-s" onclick="volver()">← Volver</button>
         <button type="submit" class="btn-p" id="btn-guardar">✓ Guardar datos</button>
+        <button type="button" class="btn-s" id="btn-borrador" onclick="guardarBorrador(event)">📝 Guardar como borrador</button>
       </div>
     </form>
   </div>
@@ -234,11 +235,24 @@ async function buscarEmpleado(){
     document.getElementById('btn-buscar').disabled = false;
 
     if(check.existe){
-      // Ya envió — mostrar pantalla de bloqueo
-      document.getElementById('lock-msg').textContent =
-        `${emp['Primer nombre']} ${emp['Primer apellido']} ya envió su información. Para modificarla, ingresa la clave de administrador.`;
-      document.getElementById('step1').classList.remove('active');
-      document.getElementById('step-lock').classList.add('active');
+      if(check.es_borrador){
+        // Es borrador — mostrar y permitir continuar
+        EMP = emp;
+        // Pre-llenar datos del borrador
+        if(check.registro && check.registro.datos_completos){
+          EMP = {...EMP, ...check.registro.datos_completos};
+        }
+        document.getElementById('step1').classList.remove('active');
+        renderFormulario(emp);
+        document.getElementById('form-body').insertAdjacentHTML('beforeend',
+          '<div style="background:#e8f4f8;border-left:4px solid #3498db;padding:12px;border-radius:6px;margin-top:16px;font-size:13px;color:#2c3e50"><strong>📝 Modo edición</strong> — Estás continuando un borrador anterior. Completa y guarda cuando estés listo.</div>');
+      } else {
+        // Ya completó — mostrar pantalla de bloqueo
+        document.getElementById('lock-msg').textContent =
+          `${emp['Primer nombre']} ${emp['Primer apellido']} ya envió su información. Para modificarla, ingresa la clave de administrador.`;
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step-lock').classList.add('active');
+      }
     } else {
       // No existe — mostrar formulario
       renderFormulario(emp);
@@ -413,6 +427,7 @@ async function guardarDatos(e){
 
   document.getElementById('btn-guardar').disabled=true;
   document.getElementById('btn-guardar').innerHTML='<span class="spinner-inline"></span> Guardando...';
+  document.getElementById('btn-borrador').disabled=true;
 
   const res = await api('/api/empleado','POST', datos);
   if(res.ok){
@@ -425,6 +440,34 @@ async function guardarDatos(e){
     document.getElementById('btn-guardar').disabled=false;
     document.getElementById('btn-guardar').innerHTML='✓ Guardar datos';
     alert('Error al guardar: '+res.error);
+  }
+}
+
+
+// ── GUARDAR COMO BORRADOR ──
+async function guardarBorrador(e){
+  e.preventDefault();
+  const fd=new FormData(document.getElementById('frm'));
+  const datos={...EMP, cedula: String(EMP['Numero documento empleado'])};
+  fd.forEach((v,k)=>{ datos[k]=v; });
+
+  document.getElementById('btn-borrador').disabled=true;
+  document.getElementById('btn-borrador').innerHTML='<span class="spinner-inline"></span> Guardando borrador...';
+  document.getElementById('btn-guardar').disabled=true;
+
+  const res = await api('/api/empleado?borrador=true','POST', datos);
+  if(res.ok){
+    document.getElementById('form-body').innerHTML=
+      '<div class="success-msg">📝 ¡Borrador guardado! Puedes continuar en cualquier momento.</div>';
+    document.getElementById('btn-guardar').classList.add('hidden');
+    document.getElementById('btn-borrador').classList.add('hidden');
+    document.getElementById('alerta').innerHTML='';
+    setTimeout(()=>volver(), 2800);
+  } else {
+    document.getElementById('btn-borrador').disabled=false;
+    document.getElementById('btn-borrador').innerHTML='📝 Guardar como borrador';
+    document.getElementById('btn-guardar').disabled=false;
+    alert('Error al guardar borrador: '+res.error);
   }
 }
 

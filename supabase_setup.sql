@@ -5,7 +5,9 @@ create table if not exists colaboradores (
   cedula text unique not null,
   nombre text,
   datos_completos jsonb,
-  fecha_completacion timestamptz default now()
+  es_borrador boolean default false,
+  fecha_guardado timestamptz default now(),
+  fecha_completacion timestamptz
 );
 
 -- Índice para búsquedas rápidas por cédula

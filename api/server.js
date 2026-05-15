@@ -27,7 +27,7 @@ app.get('/api/health', (req, res) => {
 
 // ── VERSION ENDPOINT ──
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v1.1.0' });
+  res.json({ version: 'v1.2.0' });
 });
 
 // ── GET /api/empleado/:cedula ──
@@ -56,24 +56,31 @@ app.post('/api/unlock', (req, res) => {
 });
 
 // ── POST /api/empleado ──
-// Guarda o actualiza un registro
+// Guarda o actualiza un registro (borrador o completo)
 app.post('/api/empleado', async (req, res) => {
   const datos = req.body;
   if (!datos.cedula) return res.status(400).json({ error: 'Cédula requerida' });
+
+  const esBorrador = req.query.borrador === 'true' || req.headers['x-draft'] === 'true';
 
   const payload = {
     cedula: String(datos.cedula),
     nombre: `${datos['Primer nombre'] || ''} ${datos['Primer apellido'] || ''}`.trim(),
     datos_completos: datos,
-    fecha_completacion: new Date().toISOString()
+    es_borrador: esBorrador,
+    fecha_guardado: new Date().toISOString()
   };
+
+  if (!esBorrador) {
+    payload.fecha_completacion = new Date().toISOString();
+  }
 
   const { error } = await supabase
     .from('colaboradores')
     .upsert(payload, { onConflict: 'cedula' });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ ok: true });
+  res.json({ ok: true, draft: esBorrador });
 });
 
 // ── GET /api/admin/todos ──
