@@ -62,22 +62,35 @@ app.post('/api/empleado', async (req, res) => {
   if (!datos.cedula) return res.status(400).json({ error: 'Cédula requerida' });
 
   const esBorrador = req.query.borrador === 'true' || req.headers['x-draft'] === 'true';
+  const ahora = new Date().toISOString();
 
-  const payload = {
+  // Intentar con columnas de borrador (tabla actualizada)
+  let payload = {
     cedula: String(datos.cedula),
     nombre: `${datos['Primer nombre'] || ''} ${datos['Primer apellido'] || ''}`.trim(),
     datos_completos: datos,
     es_borrador: esBorrador,
-    fecha_guardado: new Date().toISOString()
+    fecha_guardado: ahora,
+    fecha_completacion: esBorrador ? null : ahora
   };
 
-  if (!esBorrador) {
-    payload.fecha_completacion = new Date().toISOString();
-  }
-
-  const { error } = await supabase
+  let { error } = await supabase
     .from('colaboradores')
     .upsert(payload, { onConflict: 'cedula' });
+
+  // Si falla por columnas nuevas inexistentes, guardar sin ellas
+  if (error && error.message && error.message.includes('schema cache')) {
+    payload = {
+      cedula: String(datos.cedula),
+      nombre: `${datos['Primer nombre'] || ''} ${datos['Primer apellido'] || ''}`.trim(),
+      datos_completos: { ...datos, _borrador: esBorrador },
+      fecha_completacion: esBorrador ? undefined : ahora
+    };
+    const retry = await supabase
+      .from('colaboradores')
+      .upsert(payload, { onConflict: 'cedula' });
+    error = retry.error;
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true, draft: esBorrador });
