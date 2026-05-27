@@ -68,7 +68,7 @@ app.post('/api/empleado', async (req, res) => {
   let payload = {
     cedula: String(datos.cedula),
     nombre: `${datos['Primer nombre'] || ''} ${datos['Primer apellido'] || ''}`.trim(),
-    datos_completos: datos,
+    datos_completos: { ...datos, ciudad_empresa: 'Bogotá' },
     es_borrador: esBorrador,
     fecha_guardado: ahora,
     fecha_completacion: esBorrador ? null : ahora
