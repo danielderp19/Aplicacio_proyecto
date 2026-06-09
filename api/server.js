@@ -27,7 +27,7 @@ app.get('/api/health', (req, res) => {
 
 // ── VERSION ENDPOINT ──
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v1.2.0' });
+  res.json({ version: 'v1.2.1' });
 });
 
 // ── GET /api/empleado/:cedula ──
@@ -36,14 +36,15 @@ app.get('/api/empleado/:cedula', async (req, res) => {
   const { cedula } = req.params;
   const { data, error } = await supabase
     .from('colaboradores')
-    .select('cedula, nombre, fecha_completacion')
+    .select('cedula, nombre, fecha_completacion, datos_completos')
     .eq('cedula', cedula)
     .single();
 
   if (error && error.code !== 'PGRST116') {
     return res.status(500).json({ error: error.message });
   }
-  res.json({ existe: !!data, registro: data || null });
+  const esBorrador = !!data?.datos_completos?._borrador;
+  res.json({ existe: !!data, es_borrador: esBorrador, registro: data || null });
 });
 
 // ── POST /api/unlock ──
@@ -84,7 +85,7 @@ app.post('/api/empleado', async (req, res) => {
       cedula: String(datos.cedula),
       nombre: `${datos['Primer nombre'] || ''} ${datos['Primer apellido'] || ''}`.trim(),
       datos_completos: { ...datos, _borrador: esBorrador },
-      fecha_completacion: esBorrador ? undefined : ahora
+      fecha_completacion: esBorrador ? null : ahora
     };
     const retry = await supabase
       .from('colaboradores')
