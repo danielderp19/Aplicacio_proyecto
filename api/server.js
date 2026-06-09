@@ -29,7 +29,7 @@ app.get('/api/health', (req, res) => {
 
 // ── VERSION ENDPOINT ──
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v1.3.1' });
+  res.json({ version: 'v1.3.2' });
 });
 
 // ── GET /api/empleado/:cedula ──
@@ -182,6 +182,47 @@ app.get('/api/admin/formatos', async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', `attachment; filename="Formatos_Colaboradores_Logiser_${today}.zip"`);
+  res.send(zip);
+});
+
+// ── GET /api/admin/formatos-completados ──
+// Descarga un ZIP solo con las fichas de colaboradores que ya diligenciaron datos
+app.get('/api/admin/formatos-completados', async (req, res) => {
+  const clave = req.headers['x-admin-key'];
+  if (!clave || clave.toLowerCase().trim() !== ADMIN_KEY.toLowerCase().trim()) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  const { data, error } = await supabase
+    .from('colaboradores')
+    .select('cedula, nombre, fecha_completacion, datos_completos')
+    .order('fecha_completacion', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  const basePorCedula = new Map(
+    empleadosBase.map((base) => [String(base['Numero documento empleado']).trim(), base])
+  );
+  const registrosCompletados = (data || [])
+    .filter((record) => !record.datos_completos?._borrador && record.fecha_completacion)
+    .map((record) => {
+      const cedula = String(record.cedula || '').trim();
+      const base = basePorCedula.get(cedula) || {};
+      return {
+        cedula,
+        nombre: record.nombre || `${base['Primer nombre'] || ''} ${base['Primer apellido'] || ''}`.trim(),
+        fecha_completacion: record.fecha_completacion,
+        datos_completos: {
+          ...base,
+          ...(record.datos_completos || {}),
+          cedula,
+        },
+      };
+    });
+
+  const zip = await buildFormatosZip(registrosCompletados);
+  const today = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="Formatos_Diligenciados_Logiser_${today}.zip"`);
   res.send(zip);
 });
 

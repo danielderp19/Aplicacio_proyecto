@@ -150,18 +150,26 @@ function fillFormatSheet(ws, datos) {
 }
 
 function fillEducation(ws, datos) {
+  const bachillerato = {
+    checked: normalize(value(datos, 'nivel_bachillerato')).startsWith('si'),
+    entidad: value(datos, 'entidad_bachillerato'),
+  };
+  mark(ws, bachillerato.checked || !!bachillerato.entidad, 'I46');
+  set(ws, 'N46', bachillerato.entidad);
+
   const rows = [
-    ['bachillerato', 46],
     ['tecnico', 47],
     ['tecnologico', 48],
     ['universitario', 49],
     ['postgrado', 50],
   ];
   for (const [level, row] of rows) {
+    const titulo = value(datos, `titulo_${level}`);
+    const entidad = value(datos, `entidad_${level}`);
     const checked = normalize(value(datos, `nivel_${level}`)).startsWith('si');
-    mark(ws, checked, `I${row}`);
-    set(ws, `T${row}`, value(datos, `titulo_${level}`));
-    set(ws, `AH${row}`, value(datos, `entidad_${level}`));
+    mark(ws, checked || !!titulo || !!entidad, `I${row}`);
+    set(ws, `T${row}`, titulo);
+    set(ws, `AH${row}`, entidad);
   }
   mark(ws, normalize(value(datos, 'nivel_otros')).startsWith('si'), 'I51');
 }

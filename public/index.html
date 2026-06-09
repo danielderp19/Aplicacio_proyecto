@@ -103,7 +103,8 @@ button{padding:12px 20px;border:none;border-radius:8px;font-size:14px;font-weigh
       <div class="registros-lista" id="lista-registros"></div>
       <div class="admin-btns">
         <button class="btn-dl btn-green" onclick="descargarTodo()">📥 Descargar todo (CSV/Excel)</button>
-        <button class="btn-dl btn-green" onclick="descargarFormatos()">📄 Descargar fichas diligenciadas</button>
+        <button class="btn-dl btn-green" onclick="descargarFormatos()">📄 Descargar fichas consolidadas</button>
+        <button class="btn-dl btn-green" onclick="descargarFormatosCompletados()">✅ Descargar solo diligenciadas</button>
       </div>
     </div>
   </div>
@@ -498,6 +499,20 @@ async function descargarFormatos(){
   URL.revokeObjectURL(a.href);
 }
 
+
+// ── DESCARGAR FICHAS COMPLETADAS ──
+async function descargarFormatosCompletados(){
+  if(!adminKey){ alert('Debes iniciar sesión como admin primero.'); return; }
+  const res = await fetch('/api/admin/formatos-completados', { headers: { 'x-admin-key': adminKey } });
+  if(!res.ok){ alert('No se pudieron descargar las fichas diligenciadas.'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Formatos_Diligenciados_Logiser_${new Date().toISOString().slice(0,10)}.zip`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
 // ── DESCARGAR TODO ──
 async function descargarTodo(){
   if(!adminKey){ alert('Debes iniciar sesión como admin primero.'); return; }
@@ -520,11 +535,11 @@ async function descargarTodo(){
 fetch('/api/version').then(r=>r.json()).then(d=>{
   document.getElementById('version-info').textContent = d.version;
 }).catch(e=>{
-  console.log('Versión local: v1.3.1');
+  console.log('Versión local: v1.3.2');
 });
 
 </script>
-<div class="version-badge" id="version-info">v1.3.1</div>
+<div class="version-badge" id="version-info">v1.3.2</div>
 
   </body>
 </html>
