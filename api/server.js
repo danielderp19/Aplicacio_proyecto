@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const { buildFormatoBuffer, buildFormatosZip } = require('./formatoColaborador');
+const empleadosBase = require('../data/empleados_base.json');
 
 const app = express();
 app.use(cors());
@@ -27,7 +29,7 @@ app.get('/api/health', (req, res) => {
 
 // ── VERSION ENDPOINT ──
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v1.2.1' });
+  res.json({ version: 'v1.3.1' });
 });
 
 // ── GET /api/empleado/:cedula ──
@@ -115,6 +117,72 @@ app.get('/api/admin/todos', async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
   res.json(data);
+});
+
+// ── GET /api/admin/formato/:cedula ──
+// Descarga una ficha individual en el formato oficial de actualización
+app.get('/api/admin/formato/:cedula', async (req, res) => {
+  const clave = req.headers['x-admin-key'];
+  if (!clave || clave.toLowerCase().trim() !== ADMIN_KEY.toLowerCase().trim()) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  const { cedula } = req.params;
+  const { data, error } = await supabase
+    .from('colaboradores')
+    .select('cedula, nombre, datos_completos')
+    .eq('cedula', cedula)
+    .single();
+
+  if (error && error.code !== 'PGRST116') return res.status(500).json({ error: error.message });
+  const base = empleadosBase.find((e) => String(e['Numero documento empleado']).trim() === String(cedula).trim()) || {};
+  const datosCompletos = {
+    ...base,
+    ...(data?.datos_completos || {}),
+    cedula: String(cedula),
+  };
+  const buffer = await buildFormatoBuffer(datosCompletos);
+  const filename = `Formato_${cedula}.xlsx`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(Buffer.from(buffer));
+});
+
+// ── GET /api/admin/formatos ──
+// Descarga un ZIP con todas las fichas diligenciadas
+app.get('/api/admin/formatos', async (req, res) => {
+  const clave = req.headers['x-admin-key'];
+  if (!clave || clave.toLowerCase().trim() !== ADMIN_KEY.toLowerCase().trim()) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  const { data, error } = await supabase
+    .from('colaboradores')
+    .select('cedula, nombre, fecha_completacion, datos_completos')
+    .order('fecha_completacion', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  const actualizaciones = new Map((data || []).map((r) => [String(r.cedula), r]));
+  const registrosConsolidados = empleadosBase.map((base) => {
+    const cedula = String(base['Numero documento empleado'] || base.cedula || '').trim();
+    const actualizado = actualizaciones.get(cedula);
+    const datosCompletos = {
+      ...base,
+      ...(actualizado?.datos_completos || {}),
+      cedula,
+    };
+    return {
+      cedula,
+      nombre: actualizado?.nombre || `${base['Primer nombre'] || ''} ${base['Primer apellido'] || ''}`.trim(),
+      fecha_completacion: actualizado?.fecha_completacion || null,
+      datos_completos: datosCompletos,
+    };
+  });
+  const zip = await buildFormatosZip(registrosConsolidados);
+  const today = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="Formatos_Colaboradores_Logiser_${today}.zip"`);
+  res.send(zip);
 });
 
 // ── GET /api/admin/stats ──
