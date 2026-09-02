@@ -29,7 +29,7 @@ app.get('/api/health', (req, res) => {
 
 // ── VERSION ENDPOINT ──
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v1.3.2' });
+  res.json({ version: 'v1.3.3' });
 });
 
 // ── GET /api/empleado/:cedula ──

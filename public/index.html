@@ -244,7 +244,7 @@ async function buscarEmpleado(){
           EMP = {...EMP, ...check.registro.datos_completos};
         }
         document.getElementById('step1').classList.remove('active');
-        renderFormulario(emp);
+        renderFormulario(EMP);
         document.getElementById('form-body').insertAdjacentHTML('beforeend',
           '<div style="background:#e8f4f8;border-left:4px solid #3498db;padding:12px;border-radius:6px;margin-top:16px;font-size:13px;color:#2c3e50"><strong>📝 Modo edición</strong> — Estás continuando un borrador anterior. Completa y guarda cuando estés listo.</div>');
       } else {
@@ -291,6 +291,17 @@ function seccion(titulo, innerHtml){
 function ft(n,l,r){ return `<div class="fg"><label>${l}${r?' *':` <span class="opt">(opcional)</span>`}</label><input type="text" name="${n}" ${r?'required':''}></div>`; }
 function fd(n,l,r){ return `<div class="fg"><label>${l}${r?' *':''}</label><input type="date" name="${n}" ${r?'required':''}></div>`; }
 function fs(n,l,opts,r){ return `<div class="fg"><label>${l}${r?' *':''}</label><select name="${n}" ${r?'required':''}><option value="">Selecciona...</option>${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`; }
+function prellenarFormulario(datos){
+  document.querySelectorAll('#frm input[name], #frm select[name]').forEach(el => {
+    const val = datos[el.name];
+    if(val === undefined || val === null || String(val).trim() === '') return;
+    if(el.type === 'checkbox' || el.type === 'radio'){
+      el.checked = String(el.value).trim().toLowerCase() === String(val).trim().toLowerCase();
+    } else {
+      el.value = val;
+    }
+  });
+}
 
 // ── RENDER FORMULARIO ──
 function renderFormulario(emp){
@@ -381,7 +392,23 @@ function renderFormulario(emp){
       ${fs('Parentesco contacto emergencia','Parentesco *',['Cónyuge','Madre','Padre','Hermano/a','Hijo/a','Amigo/a','Otro'],true)}
     </div>`));
 
-  // 8. BENEFICIARIOS
+  // 8. EDUCACIÓN DEL COLABORADOR
+  body.appendChild(seccion('🎓 Nivel Educativo',`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400"><input type="checkbox" name="nivel_bachillerato" value="Si" style="width:auto"> Bachillerato</label>
+        <input type="text" name="entidad_bachillerato" placeholder="Institución educativa">
+      </div>
+      ${['tecnico','tecnologico','universitario','postgrado'].map(n=>`
+      <div style="display:grid;grid-template-columns:140px 1fr 1fr;gap:10px;align-items:center">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400"><input type="checkbox" name="nivel_${n}" value="Si" style="width:auto"> ${n.charAt(0).toUpperCase()+n.slice(1)}</label>
+        <input type="text" name="titulo_${n}" placeholder="Título obtenido">
+        <input type="text" name="entidad_${n}" placeholder="Institución">
+      </div>`).join('')}
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400"><input type="checkbox" name="nivel_otros" value="Si" style="width:auto"> Otros</label>
+    </div>`));
+
+  // 9. BENEFICIARIOS
   body.appendChild(seccion('👨‍👩‍👧‍👦 Grupo Familiar y Beneficiarios',`
     <p style="font-size:12px;color:#7f8c8d;margin-bottom:10px">Hasta 5 miembros del grupo familiar</p>
     <div style="overflow-x:auto">
@@ -403,6 +430,10 @@ function renderFormulario(emp){
   document.getElementById('btn-guardar').classList.remove('hidden');
   document.getElementById('btn-guardar').disabled = false;
   document.getElementById('btn-guardar').innerHTML = '✓ Guardar datos';
+  document.getElementById('btn-borrador').classList.remove('hidden');
+  document.getElementById('btn-borrador').disabled = false;
+  document.getElementById('btn-borrador').innerHTML = '📝 Guardar como borrador';
+  prellenarFormulario(emp);
 
   document.getElementById('step1').classList.remove('active');
   document.getElementById('step-lock').classList.remove('active');
@@ -535,11 +566,11 @@ async function descargarTodo(){
 fetch('/api/version').then(r=>r.json()).then(d=>{
   document.getElementById('version-info').textContent = d.version;
 }).catch(e=>{
-  console.log('Versión local: v1.3.2');
+  console.log('Versión local: v1.3.3');
 });
 
 </script>
-<div class="version-badge" id="version-info">v1.3.2</div>
+<div class="version-badge" id="version-info">v1.3.3</div>
 
   </body>
 </html>
