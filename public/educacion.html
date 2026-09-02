@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educación colaborador - Logística Ferretera</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eef2f7;min-height:100vh;padding:24px;color:#25313f}
+.container{max-width:820px;margin:0 auto;background:#fff;border:1px solid #dfe6ef;border-radius:10px;box-shadow:0 14px 40px rgba(22,34,51,.12);padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:22px}
+h1{font-size:22px;color:#1d2939;margin-bottom:4px}
+.muted{color:#667085;font-size:13px}
+.version{font-size:12px;background:#eef4ff;color:#3f5fcf;border:1px solid #cfdcff;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.panel{background:#f8fafc;border:1px solid #e4e7ec;border-radius:8px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.level{display:grid;grid-template-columns:160px 1fr 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #edf0f4}
+.level:first-child{grid-template-columns:160px 1fr}
+.level:last-child{border-bottom:none}
+label{font-size:12px;font-weight:600;color:#344054;margin-bottom:5px;display:block}
+.check-label{display:flex;gap:8px;align-items:center;margin:0;font-weight:500}
+input[type=text],input[type=password]{width:100%;border:1.5px solid #d0d5dd;border-radius:7px;padding:10px 12px;font-size:14px;font-family:inherit}
+input:focus{outline:none;border-color:#5570d8;box-shadow:0 0 0 3px rgba(85,112,216,.14)}
+input[type=checkbox]{width:16px;height:16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{border:none;border-radius:7px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:14px}
+.primary{background:#5570d8;color:#fff}
+.primary:hover{background:#465ec0}
+.secondary{background:#eef2f7;color:#344054;border:1px solid #d0d5dd}
+.danger{background:#b42318;color:#fff}
+button:disabled{background:#a5adbd;cursor:not-allowed}
+.employee{display:none;background:#ecfdf3;border-left:4px solid #12b76a;border-radius:7px;padding:13px;margin-bottom:16px;font-size:14px}
+.employee.show{display:block}
+.message{display:none;border-radius:7px;padding:12px;margin-top:14px;font-size:13px}
+.message.show{display:block}
+.ok{background:#ecfdf3;color:#05603a;border:1px solid #abefc6}
+.err{background:#fef3f2;color:#912018;border:1px solid #fecdca}
+.hidden{display:none}
+@media(max-width:700px){body{padding:12px}.container{padding:18px}.top{display:block}.version{display:inline-block;margin-top:10px}.grid,.level,.level:first-child{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="container">
+  <div class="top">
+    <div>
+      <h1>Completar educación 1x1</h1>
+      <p class="muted">Ruta interna para anexar el nivel educativo a registros ya diligenciados.</p>
+    </div>
+    <span class="version" id="version">v1.3.5</span>
+  </div>
+
+  <section class="panel">
+    <div class="grid">
+      <div>
+        <label for="admin-key">Clave admin</label>
+        <input type="password" id="admin-key" placeholder="gatos negros" autocomplete="current-password">
+      </div>
+      <div>
+        <label for="cedula">Cédula</label>
+        <input type="text" id="cedula" placeholder="Ej: 1001095349" inputmode="numeric">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btn-buscar" onclick="buscar()">Buscar registro</button>
+      <button class="secondary" onclick="limpiar()">Limpiar</button>
+      <button class="secondary" onclick="location.href='/'">Volver al formulario</button>
+    </div>
+    <div class="message" id="msg"></div>
+  </section>
+
+  <div class="employee" id="employee"></div>
+
+  <form class="panel hidden" id="form" onsubmit="guardar(event)">
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_bachillerato" value="Si"> Bachillerato</label>
+      <input type="text" name="entidad_bachillerato" placeholder="Institución educativa">
+    </div>
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_tecnico" value="Si"> Técnico</label>
+      <input type="text" name="titulo_tecnico" placeholder="Título obtenido">
+      <input type="text" name="entidad_tecnico" placeholder="Institución">
+    </div>
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_tecnologico" value="Si"> Tecnológico</label>
+      <input type="text" name="titulo_tecnologico" placeholder="Título obtenido">
+      <input type="text" name="entidad_tecnologico" placeholder="Institución">
+    </div>
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_universitario" value="Si"> Universitario</label>
+      <input type="text" name="titulo_universitario" placeholder="Título obtenido">
+      <input type="text" name="entidad_universitario" placeholder="Institución">
+    </div>
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_postgrado" value="Si"> Postgrado</label>
+      <input type="text" name="titulo_postgrado" placeholder="Título obtenido">
+      <input type="text" name="entidad_postgrado" placeholder="Institución">
+    </div>
+    <div class="level">
+      <label class="check-label"><input type="checkbox" name="nivel_otros" value="Si"> Otros</label>
+      <span class="muted">Marca esta opción si no encaja en las anteriores.</span>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btn-guardar" type="submit">Guardar educación</button>
+      <button class="secondary" type="button" onclick="descargarFormato()">Descargar ficha</button>
+    </div>
+  </form>
+</main>
+
+<script>
+let registroActual = null;
+let adminKey = '';
+
+fetch('/api/version').then(r=>r.json()).then(d=>{
+  document.getElementById('version').textContent = d.version;
+}).catch(()=>{});
+
+function msg(text, type='ok'){
+  const el=document.getElementById('msg');
+  el.textContent=text;
+  el.className=`message show ${type}`;
+}
+
+function limpiar(){
+  registroActual=null;
+  document.getElementById('cedula').value='';
+  document.getElementById('employee').className='employee';
+  document.getElementById('employee').innerHTML='';
+  document.getElementById('form').classList.add('hidden');
+  document.getElementById('msg').className='message';
+  document.getElementById('form').reset();
+}
+
+function prellenar(datos){
+  document.querySelectorAll('#form input[name]').forEach(el=>{
+    const val=datos[el.name];
+    if(val===undefined || val===null || String(val).trim()==='') return;
+    if(el.type==='checkbox') el.checked=String(val).trim().toLowerCase()==='si';
+    else el.value=val;
+  });
+}
+
+function resumenEducacion(){
+  const fd=new FormData(document.getElementById('form'));
+  const datos={};
+  fd.forEach((v,k)=>{ datos[k]=v; });
+  const niveles=[
+    ['nivel_bachillerato','Bachillerato'],
+    ['nivel_tecnico','Técnico'],
+    ['nivel_tecnologico','Tecnológico'],
+    ['nivel_universitario','Universitario'],
+    ['nivel_postgrado','Postgrado'],
+    ['nivel_otros','Otros']
+  ];
+  const seleccionados=niveles.filter(([key])=>String(datos[key]||'').trim().toLowerCase()==='si');
+  datos.nivel_educativo=seleccionados.map(([,label])=>label).join(', ');
+  datos.detalle_nivel_educativo=seleccionados.map(([key,label])=>{
+    const suffix=key.replace('nivel_','');
+    const titulo=datos[`titulo_${suffix}`] ? ` - ${datos[`titulo_${suffix}`]}` : '';
+    const entidad=datos[`entidad_${suffix}`] || '';
+    return `${label}${titulo}${entidad ? ` (${entidad})` : ''}`;
+  }).join('; ');
+  return { datos, seleccionados };
+}
+
+async function buscar(silencioso=false){
+  adminKey=document.getElementById('admin-key').value.trim();
+  const cedula=document.getElementById('cedula').value.trim();
+  if(!adminKey || !cedula){ msg('Escribe la clave admin y la cédula.', 'err'); return; }
+
+  const btn=document.getElementById('btn-buscar');
+  btn.disabled=true;
+  btn.textContent='Buscando...';
+  try{
+    const res=await fetch(`/api/admin/empleado/${encodeURIComponent(cedula)}`, {headers:{'x-admin-key':adminKey}});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error || 'No se pudo buscar el registro.');
+    registroActual=data;
+    const d=data.datos_completos || {};
+    const nombre=[d['Primer nombre'], d['Segundo nombre'], d['Primer apellido'], d['Segundo apellido']].filter(Boolean).join(' ');
+    const employee=document.getElementById('employee');
+    employee.innerHTML=`<strong>${nombre || data.registro.nombre || 'Colaborador'}</strong><br>Cédula: ${cedula}<br><span class="muted">Actual: ${d.nivel_educativo || 'sin nivel educativo registrado'}</span>`;
+    employee.className='employee show';
+    document.getElementById('form').classList.remove('hidden');
+    document.getElementById('form').reset();
+    prellenar(d);
+    if(!silencioso) msg('Registro cargado. Completa la educación y guarda.');
+  }catch(e){
+    registroActual=null;
+    document.getElementById('form').classList.add('hidden');
+    document.getElementById('employee').className='employee';
+    msg(e.message, 'err');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Buscar registro';
+  }
+}
+
+async function guardar(e){
+  e.preventDefault();
+  if(!registroActual){ msg('Primero busca un registro.', 'err'); return; }
+  const { datos, seleccionados } = resumenEducacion();
+  if(!seleccionados.length){ msg('Selecciona al menos un nivel educativo.', 'err'); return; }
+
+  const cedula=document.getElementById('cedula').value.trim();
+  const btn=document.getElementById('btn-guardar');
+  btn.disabled=true;
+  btn.textContent='Guardando...';
+  try{
+    const res=await fetch(`/api/admin/educacion/${encodeURIComponent(cedula)}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-admin-key':adminKey},
+      body:JSON.stringify(datos)
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error || 'No se pudo guardar.');
+    registroActual.datos_completos=data.datos_completos;
+    await buscar(true);
+    msg(`Educación guardada: ${data.datos_completos.nivel_educativo}`);
+  }catch(e){
+    msg(e.message, 'err');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Guardar educación';
+  }
+}
+
+async function descargarFormato(){
+  if(!registroActual){ msg('Primero busca un registro.', 'err'); return; }
+  const cedula=document.getElementById('cedula').value.trim();
+  const res=await fetch(`/api/admin/formato/${encodeURIComponent(cedula)}`, {headers:{'x-admin-key':adminKey}});
+  if(!res.ok){ msg('No se pudo descargar la ficha.', 'err'); return; }
+  const blob=await res.blob();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Formato_${cedula}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>

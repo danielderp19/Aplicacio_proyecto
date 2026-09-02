@@ -16,6 +16,10 @@
       "dest": "/api/server.js"
     },
     {
+      "src": "/educacion",
+      "dest": "/public/educacion.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }

@@ -102,6 +102,7 @@ button{padding:12px 20px;border:none;border-radius:8px;font-size:14px;font-weigh
       </div>
       <div class="registros-lista" id="lista-registros"></div>
       <div class="admin-btns">
+        <button class="btn-dl btn-green" onclick="window.open('/educacion','_blank')">🎓 Completar educación</button>
         <button class="btn-dl btn-green" onclick="descargarTodo()">📥 Descargar todo (CSV/Excel)</button>
         <button class="btn-dl btn-green" onclick="descargarFormatos()">📄 Descargar fichas consolidadas</button>
         <button class="btn-dl btn-green" onclick="descargarFormatosCompletados()">✅ Descargar solo diligenciadas</button>
@@ -600,11 +601,11 @@ async function descargarTodo(){
 fetch('/api/version').then(r=>r.json()).then(d=>{
   document.getElementById('version-info').textContent = d.version;
 }).catch(e=>{
-  console.log('Versión local: v1.3.4');
+  console.log('Versión local: v1.3.5');
 });
 
 </script>
-<div class="version-badge" id="version-info">v1.3.4</div>
+<div class="version-badge" id="version-info">v1.3.5</div>
 
   </body>
 </html>
