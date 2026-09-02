@@ -55,6 +55,12 @@ function mark(ws, condition, cell) {
   if (condition) ws.getCell(cell).value = 'X';
 }
 
+function hasEducationLevel(datos, level, ...aliases) {
+  const direct = normalize(value(datos, `nivel_${level}`));
+  const summary = normalize(value(datos, 'nivel_educativo', 'Nivel educativo', 'Nivel Educativo'));
+  return direct.startsWith('si') || [level, ...aliases].some((term) => summary.includes(normalize(term)));
+}
+
 function fillFormatSheet(ws, datos) {
   const [birthDay, birthMonth, birthYear] = splitDate(value(datos, 'Fecha nacimiento'));
   const [startDay, startMonth, startYear] = splitDate(value(datos, 'Fecha inicio contrato'));
@@ -151,7 +157,7 @@ function fillFormatSheet(ws, datos) {
 
 function fillEducation(ws, datos) {
   const bachillerato = {
-    checked: normalize(value(datos, 'nivel_bachillerato')).startsWith('si'),
+    checked: hasEducationLevel(datos, 'bachillerato', 'bachiller'),
     entidad: value(datos, 'entidad_bachillerato'),
   };
   mark(ws, bachillerato.checked || !!bachillerato.entidad, 'I46');
@@ -164,14 +170,16 @@ function fillEducation(ws, datos) {
     ['postgrado', 50],
   ];
   for (const [level, row] of rows) {
-    const titulo = value(datos, `titulo_${level}`);
+    const tituloDirecto = value(datos, `titulo_${level}`);
     const entidad = value(datos, `entidad_${level}`);
-    const checked = normalize(value(datos, `nivel_${level}`)).startsWith('si');
+    const aliases = level === 'tecnologico' ? ['tecnológico', 'tecnologo', 'tecnólogo'] : [];
+    const checked = hasEducationLevel(datos, level, ...aliases);
+    const titulo = tituloDirecto || (checked ? value(datos, 'titulo_obtenido', 'Título obtenido') : '');
     mark(ws, checked || !!titulo || !!entidad, `I${row}`);
     set(ws, `T${row}`, titulo);
     set(ws, `AH${row}`, entidad);
   }
-  mark(ws, normalize(value(datos, 'nivel_otros')).startsWith('si'), 'I51');
+  mark(ws, hasEducationLevel(datos, 'otros', 'otro'), 'I51');
 }
 
 function fillBeneficiaries(ws, datos) {

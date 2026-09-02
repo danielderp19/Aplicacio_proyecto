@@ -302,6 +302,41 @@ function prellenarFormulario(datos){
     }
   });
 }
+function datosFormulario(){
+  const fd=new FormData(document.getElementById('frm'));
+  const datos={...EMP, cedula: String(EMP['Numero documento empleado'])};
+  fd.forEach((v,k)=>{ datos[k]=v; });
+  normalizarEducacion(datos);
+  return datos;
+}
+function normalizarEducacion(datos){
+  const niveles=[
+    ['nivel_bachillerato','Bachillerato'],
+    ['nivel_tecnico','Técnico'],
+    ['nivel_tecnologico','Tecnológico'],
+    ['nivel_universitario','Universitario'],
+    ['nivel_postgrado','Postgrado'],
+    ['nivel_otros','Otros']
+  ];
+  const seleccionados=niveles.filter(([key])=>String(datos[key]||'').trim().toLowerCase()==='si').map(([,label])=>label);
+  datos.nivel_educativo = seleccionados.join(', ');
+  datos.detalle_nivel_educativo = niveles.map(([key,label])=>{
+    if(String(datos[key]||'').trim().toLowerCase()!=='si') return '';
+    const suffix=key.replace('nivel_','');
+    const titulo=datos[`titulo_${suffix}`] ? ` - ${datos[`titulo_${suffix}`]}` : '';
+    const entidad=datos[`entidad_${suffix}`] || '';
+    return `${label}${titulo}${entidad ? ` (${entidad})` : ''}`;
+  }).filter(Boolean).join('; ');
+  return seleccionados;
+}
+function validarEducacion(datos){
+  const seleccionados=normalizarEducacion(datos);
+  if(seleccionados.length) return true;
+  alert('Selecciona al menos un nivel educativo del colaborador.');
+  const first=document.querySelector('input[name="nivel_bachillerato"]');
+  if(first){ first.scrollIntoView({behavior:'smooth', block:'center'}); first.focus(); }
+  return false;
+}
 
 // ── RENDER FORMULARIO ──
 function renderFormulario(emp){
@@ -395,6 +430,7 @@ function renderFormulario(emp){
   // 8. EDUCACIÓN DEL COLABORADOR
   body.appendChild(seccion('🎓 Nivel Educativo',`
     <div style="display:flex;flex-direction:column;gap:12px">
+      <p style="font-size:12px;color:#7f8c8d;margin:0">Selecciona al menos un nivel educativo antes de guardar el envío final.</p>
       <div style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center">
         <label style="display:flex;align-items:center;gap:6px;font-weight:400"><input type="checkbox" name="nivel_bachillerato" value="Si" style="width:auto"> Bachillerato</label>
         <input type="text" name="entidad_bachillerato" placeholder="Institución educativa">
@@ -453,9 +489,9 @@ function volver(){
 // ── GUARDAR ──
 async function guardarDatos(e){
   e.preventDefault();
-  const fd=new FormData(document.getElementById('frm'));
-  const datos={...EMP, cedula: String(EMP['Numero documento empleado']), fecha_completacion:new Date().toISOString()};
-  fd.forEach((v,k)=>{ datos[k]=v; });
+  const datos=datosFormulario();
+  datos.fecha_completacion=new Date().toISOString();
+  if(!validarEducacion(datos)) return;
 
   document.getElementById('btn-guardar').disabled=true;
   document.getElementById('btn-guardar').innerHTML='<span class="spinner-inline"></span> Guardando...';
@@ -479,9 +515,7 @@ async function guardarDatos(e){
 // ── GUARDAR COMO BORRADOR ──
 async function guardarBorrador(e){
   e.preventDefault();
-  const fd=new FormData(document.getElementById('frm'));
-  const datos={...EMP, cedula: String(EMP['Numero documento empleado'])};
-  fd.forEach((v,k)=>{ datos[k]=v; });
+  const datos=datosFormulario();
 
   document.getElementById('btn-borrador').disabled=true;
   document.getElementById('btn-borrador').innerHTML='<span class="spinner-inline"></span> Guardando borrador...';
@@ -566,11 +600,11 @@ async function descargarTodo(){
 fetch('/api/version').then(r=>r.json()).then(d=>{
   document.getElementById('version-info').textContent = d.version;
 }).catch(e=>{
-  console.log('Versión local: v1.3.3');
+  console.log('Versión local: v1.3.4');
 });
 
 </script>
-<div class="version-badge" id="version-info">v1.3.3</div>
+<div class="version-badge" id="version-info">v1.3.4</div>
 
   </body>
 </html>
